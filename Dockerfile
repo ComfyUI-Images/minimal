@@ -30,9 +30,8 @@ RUN pip3 install comfyui-manager
 # Установка дополнительных библиотек (из вашего Dockerfile)
 RUN pip3 install --no-cache-dir opencv-python-headless "insightface==0.7.3" onnxruntime
 
-# Установка ComfyUI-Manager
-RUN mkdir -p custom_nodes && \
-    git clone https://github.com/ltdrdata/ComfyUI-Manager custom_nodes/ComfyUI-Manager
+RUN comfy node install --exit-on-fail comfyui_ipadapter_plus@2.0.0
+RUN comfy node install --exit-on-fail comfyui-base64-to-image@1.0.0
 
 # Установка custom nodes (вручную, вместо comfy node install)
 RUN git clone https://github.com/cubiq/ComfyUI_IPAdapter_plus.git custom_nodes/ComfyUI_IPAdapter_plus && \
