@@ -1,5 +1,3 @@
-# Адаптированный Dockerfile с элементами из официального RunPod worker-comfyui: использование uv для venv, comfy install для ComfyUI, comfy node install для custom nodes и Manager.
-
 FROM nvidia/cuda:13.0.0-runtime-ubuntu22.04
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -39,8 +37,11 @@ ENV PATH="/opt/venv/bin:${PATH}"
 # Установка comfy-cli через uv
 RUN uv pip install comfy-cli pip setuptools wheel
 
-# Установка ComfyUI через comfy-cli (с --nvidia для CUDA)
-RUN comfy install --workspace /app/ComfyUI --nvidia
+# Отключение трекинга
+RUN comfy --skip-prompt tracking disable
+
+# Установка ComfyUI через comfy-cli (с /usr/bin/yes для non-interactive)
+RUN /usr/bin/yes | comfy install --workspace /app/ComfyUI --nvidia
 
 # Переход в директорию ComfyUI (как в RunPod)
 WORKDIR /app/ComfyUI
@@ -48,7 +49,7 @@ WORKDIR /app/ComfyUI
 # Установка ComfyUI-Manager через comfy node install
 RUN comfy node install ComfyUI-Manager
 
-# Установка custom nodes через comfy node install (без @version, так как они не поддерживаются)
+# Установка custom nodes через comfy node install
 RUN comfy node install ComfyUI_IPAdapter_plus
 RUN comfy node install comfyui-base64-to-image
 
