@@ -25,13 +25,7 @@ RUN apt-get update && apt-get install -y \
 # Установка PyTorch с CUDA 13.1
 RUN pip3 install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu130
 
-# Клонирование ComfyUI
-RUN git clone https://github.com/comfyanonymous/ComfyUI /app/ComfyUI
-
-WORKDIR /app/ComfyUI
-
-# Установка зависимостей ComfyUI
-RUN pip3 install -r requirements.txt
+RUN pip3 install comfyui-manager
 
 # Установка дополнительных библиотек (из вашего Dockerfile)
 RUN pip3 install --no-cache-dir opencv-python-headless "insightface==0.7.3" onnxruntime
