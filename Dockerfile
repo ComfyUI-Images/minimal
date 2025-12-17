@@ -22,25 +22,39 @@ RUN apt-get update && apt-get install -y \
     python3-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Установка PyTorch с CUDA 13.1
+# Обновление pip для фикса ошибки в resolver (AssertionError в weights)
+RUN pip3 install --upgrade pip
+
+# Установка PyTorch с CUDA 13.0 (compatible with runtime)
 RUN pip3 install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu130
 
+# Клонирование ComfyUI
+RUN git clone https://github.com/comfyanonymous/ComfyUI /app/ComfyUI
+
+WORKDIR /app/ComfyUI
+
+# Установка зависимостей ComfyUI
+RUN pip3 install -r requirements.txt
+
+# Установка comfy-cli (для node install)
+RUN pip3 install comfy-cli
+
+# Установка ComfyUI-Manager через pip
 RUN pip3 install comfyui-manager
 
-# Установка дополнительных библиотек (из вашего Dockerfile)
+# Установка custom nodes через comfy-cli
+RUN comfy --here node install comfyui_ipadapter_plus
+RUN comfy --here node install comfyui-base64-to-image
+
+# Установка дополнительных библиотек (с headless для OpenCV)
 RUN pip3 install --no-cache-dir opencv-python-headless "insightface==0.7.3" onnxruntime
 
-RUN comfy node install --exit-on-fail comfyui_ipadapter_plus@2.0.0
-RUN comfy node install --exit-on-fail comfyui-base64-to-image@1.0.0
+# Настройка offline-режима для ComfyUI-Manager, чтобы избежать фетчей при запуске
+RUN mkdir -p user/default/ComfyUI-Manager && \
+    echo "[default]" > user/default/ComfyUI-Manager/config.ini && \
+    echo "network_mode = offline" >> user/default/ComfyUI-Manager/config.ini
 
-# Установка custom nodes (вручную, вместо comfy node install)
-RUN git clone https://github.com/cubiq/ComfyUI_IPAdapter_plus.git custom_nodes/ComfyUI_IPAdapter_plus && \
-    if [ -f custom_nodes/ComfyUI_IPAdapter_plus/requirements.txt ]; then pip3 install -r custom_nodes/ComfyUI_IPAdapter_plus/requirements.txt; fi
-
-RUN git clone https://github.com/glowcone/comfyui-base64-to-image.git custom_nodes/comfyui-base64-to-image && \
-    if [ -f custom_nodes/comfyui-base64-to-image/requirements.txt ]; then pip3 install -r custom_nodes/comfyui-base64-to-image/requirements.txt; fi
-
-# Создание директорий для моделей (из вашего Dockerfile)
+# Создание директорий для моделей
 RUN mkdir -p models/checkpoints models/loras models/ipadapter models/clip_vision
 
 # Скачивание моделей (все curl из вашего Dockerfile)
