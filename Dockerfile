@@ -39,11 +39,17 @@ RUN pip3 install -r requirements.txt
 # Установка comfy-cli
 RUN pip3 install comfy-cli
 
-# Установка ComfyUI-Manager через pip
-RUN pip3 install comfyui-manager
-
 # Отключение трекинга без промпта
 RUN comfy --skip-prompt tracking disable
+
+# Установка ComfyUI-Manager как custom node (для cm-cli.py)
+RUN mkdir -p custom_nodes && \
+    git clone https://github.com/Comfy-Org/ComfyUI-Manager.git custom_nodes/ComfyUI-Manager && \
+    cd custom_nodes/ComfyUI-Manager && \
+    pip3 install .
+
+# Команда для вывода пути (для отладки)
+RUN ls -l /app/ComfyUI/custom_nodes/ComfyUI-Manager/cm-cli.py || echo "File not found: cm-cli.py"
 
 # Установка custom nodes через comfy-cli с указанными версиями
 RUN comfy --here node install comfyui_ipadapter_plus@2.0.0
