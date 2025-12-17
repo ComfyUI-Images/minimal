@@ -1,59 +1,62 @@
-FROM nvidia/cuda:13.0.0-runtime-ubuntu22.04
+# Build argument for base image selection
+ARG BASE_IMAGE=nvidia/cuda:12.6.3-cudnn-runtime-ubuntu24.04
 
+# Stage 1: Base image with common dependencies
+FROM ${BASE_IMAGE} AS base
+
+# Prevents prompts from packages asking for user input during installation
 ENV DEBIAN_FRONTEND=noninteractive
+# Prefer binary wheels over source distributions for faster pip installations
+ENV PIP_PREFER_BINARY=1
+# Ensures output from python is printed immediately to the terminal without buffering
 ENV PYTHONUNBUFFERED=1
-ENV CVT="8894b6af3f93a899ba9d2f268ddc45aa"
+# Speed up some cmake builds
+ENV CMAKE_BUILD_PARALLEL_LEVEL=8
 
-# Установка базовых пакетов, включая libgl1 и libglib2.0-0 из RunPod
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3.10 \
-    python3.10-venv \
-    python3-pip \
+# Install Python, git and other necessary tools
+RUN apt-get update && apt-get install -y \
+    python3.12 \
+    python3.12-venv \
     git \
     wget \
-    curl \
-    build-essential \
-    cmake \
-    libopenblas-dev \
-    liblapack-dev \
-    libjpeg-dev \
-    libpng-dev \
-    pkg-config \
-    python3-dev \
     libgl1 \
     libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender1 \
     ffmpeg \
-    && rm -rf /var/lib/apt/lists/*
+    && ln -sf /usr/bin/python3.12 /usr/bin/python \
+    && ln -sf /usr/bin/pip3 /usr/bin/pip
 
-# Установка uv из RunPod (для быстрой установки pip)
+# Clean up to reduce image size
+RUN apt-get autoremove -y && apt-get clean -y && rm -rf /var/lib/apt/lists/*
+
+# Install uv (latest) using official installer and create isolated venv
 RUN wget -qO- https://astral.sh/uv/install.sh | sh \
     && ln -s /root/.local/bin/uv /usr/local/bin/uv \
     && ln -s /root/.local/bin/uvx /usr/local/bin/uvx \
     && uv venv /opt/venv
 
-# Активация venv
+# Use the virtual environment for all subsequent commands
 ENV PATH="/opt/venv/bin:${PATH}"
 
-# Установка comfy-cli через uv
+# Install comfy-cli + dependencies needed by it to install ComfyUI
 RUN uv pip install comfy-cli pip setuptools wheel
 
-# Отключение трекинга
-RUN comfy --skip-prompt tracking disable
+# Install ComfyUI non-interactively (echo "n" for tracking prompt)
+RUN echo "n" | comfy --workspace /comfyui install
 
-# Установка ComfyUI через comfy-cli (с /usr/bin/yes для non-interactive)
-RUN /usr/bin/yes | comfy install --workspace /app/ComfyUI --nvidia
-
-# Переход в директорию ComfyUI (как в RunPod)
-WORKDIR /app/ComfyUI
+# Change working directory to ComfyUI
+WORKDIR /comfyui
 
 # Установка ComfyUI-Manager через comfy node install
 RUN comfy node install ComfyUI-Manager
 
 # Установка custom nodes через comfy node install
-RUN comfy node install ComfyUI_IPAdapter_plus
+RUN comfy node install comfyui_ipadapter_plus
 RUN comfy node install comfyui-base64-to-image
 
-# Установка дополнительных библиотек через uv (с headless для OpenCV)
+# Установка дополнительных библиотек (с headless для OpenCV)
 RUN uv pip install opencv-python-headless "insightface==0.7.3" onnxruntime
 
 # Настройка offline-режима для ComfyUI-Manager
@@ -61,10 +64,12 @@ RUN mkdir -p user/default/ComfyUI-Manager && \
     echo "[default]" > user/default/ComfyUI-Manager/config.ini && \
     echo "network_mode = offline" >> user/default/ComfyUI-Manager/config.ini
 
-# Создание директорий для моделей
+ENV CVT="8894b6af3f93a899ba9d2f268ddc45aa"
+
+# Создание директорий для моделей (из вашего Dockerfile)
 RUN mkdir -p models/checkpoints models/loras models/ipadapter models/clip_vision
 
-# Скачивание моделей (curl из вашего Dockerfile)
+# Скачивание моделей (все curl из вашего Dockerfile)
 RUN curl --fail --retry 5 --retry-max-time 0 -C - -L -H "Authorization: Bearer ${CVT}" \
     -o models/checkpoints/pornmaster_proSDXLV7.safetensors \
     "https://civitai.com/api/download/models/2043971?type=Model&format=SafeTensor&size=pruned&fp=fp16"
