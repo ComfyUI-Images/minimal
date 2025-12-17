@@ -34,7 +34,7 @@ WORKDIR /app/ComfyUI
 RUN pip3 install -r requirements.txt
 
 # Установка дополнительных библиотек (из вашего Dockerfile)
-RUN pip3 install --no-cache-dir opencv-python "insightface==0.7.3" onnxruntime
+RUN pip3 install --no-cache-dir opencv-python-headless "insightface==0.7.3" onnxruntime
 
 # Установка ComfyUI-Manager
 RUN mkdir -p custom_nodes && \
