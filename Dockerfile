@@ -1,11 +1,13 @@
+# Адаптированный Dockerfile с элементами из официального RunPod worker-comfyui: использование uv для venv, comfy install для ComfyUI, comfy node install для custom nodes и Manager.
+
 FROM nvidia/cuda:13.0.0-runtime-ubuntu22.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PYTHONUNBUFFERED=1
 ENV CVT="8894b6af3f93a899ba9d2f268ddc45aa"
 
-# Установка базовых пакетов (добавлено из вашего Dockerfile)
-RUN apt-get update && apt-get install -y \
+# Установка базовых пакетов, включая libgl1 и libglib2.0-0 из RunPod
+RUN apt-get update && apt-get install -y --no-install-recommends \
     python3.10 \
     python3.10-venv \
     python3-pip \
@@ -20,48 +22,48 @@ RUN apt-get update && apt-get install -y \
     libpng-dev \
     pkg-config \
     python3-dev \
+    libgl1 \
+    libglib2.0-0 \
+    ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
-# Обновление pip для фикса ошибки в resolver (AssertionError в weights)
-RUN pip3 install --upgrade pip
+# Установка uv из RunPod (для быстрой установки pip)
+RUN wget -qO- https://astral.sh/uv/install.sh | sh \
+    && ln -s /root/.local/bin/uv /usr/local/bin/uv \
+    && ln -s /root/.local/bin/uvx /usr/local/bin/uvx \
+    && uv venv /opt/venv
 
-# Установка PyTorch с CUDA 13.0
-RUN pip3 install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu130
+# Активация venv
+ENV PATH="/opt/venv/bin:${PATH}"
 
-# Клонирование ComfyUI
-RUN git clone https://github.com/comfyanonymous/ComfyUI /app/ComfyUI
+# Установка comfy-cli через uv
+RUN uv pip install comfy-cli pip setuptools wheel
 
+# Установка ComfyUI через comfy-cli (с --nvidia для CUDA)
+RUN comfy install --workspace /app/ComfyUI --nvidia
+
+# Переход в директорию ComfyUI (как в RunPod)
 WORKDIR /app/ComfyUI
 
-# Установка зависимостей ComfyUI
-RUN pip3 install -r requirements.txt
+# Установка ComfyUI-Manager через comfy node install
+RUN comfy node install ComfyUI-Manager
 
-# Установка comfy-cli (для node install)
-RUN pip3 install comfy-cli
+# Установка custom nodes через comfy node install (без @version, так как они не поддерживаются)
+RUN comfy node install ComfyUI_IPAdapter_plus
+RUN comfy node install comfyui-base64-to-image
 
-# Отключение трекинга без промпта
-RUN comfy --skip-prompt tracking disable
+# Установка дополнительных библиотек через uv (с headless для OpenCV)
+RUN uv pip install opencv-python-headless "insightface==0.7.3" onnxruntime
 
-# Установка ComfyUI-Manager как custom node (только clone, без pip install .)
-RUN mkdir -p custom_nodes && \
-    git clone https://github.com/ltdrdata/ComfyUI-Manager.git custom_nodes/ComfyUI-Manager
-
-# Установка custom nodes через comfy-cli с указанными версиями
-RUN comfy --here node install comfyui_ipadapter_plus@2.0.0
-RUN comfy --here node install comfyui-base64-to-image@1.0.0
-
-# Установка дополнительных библиотек (с headless для OpenCV)
-RUN pip3 install --no-cache-dir opencv-python-headless "insightface==0.7.3" onnxruntime
-
-# Настройка offline-режима для ComfyUI-Manager, чтобы избежать фетчей при запуске
+# Настройка offline-режима для ComfyUI-Manager
 RUN mkdir -p user/default/ComfyUI-Manager && \
     echo "[default]" > user/default/ComfyUI-Manager/config.ini && \
     echo "network_mode = offline" >> user/default/ComfyUI-Manager/config.ini
 
-# Создание директорий для моделей (из вашего Dockerfile)
+# Создание директорий для моделей
 RUN mkdir -p models/checkpoints models/loras models/ipadapter models/clip_vision
 
-# Скачивание моделей (все curl из вашего Dockerfile)
+# Скачивание моделей (curl из вашего Dockerfile)
 RUN curl --fail --retry 5 --retry-max-time 0 -C - -L -H "Authorization: Bearer ${CVT}" \
     -o models/checkpoints/pornmaster_proSDXLV7.safetensors \
     "https://civitai.com/api/download/models/2043971?type=Model&format=SafeTensor&size=pruned&fp=fp16"
