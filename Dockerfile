@@ -36,20 +36,15 @@ WORKDIR /app/ComfyUI
 # Установка зависимостей ComfyUI
 RUN pip3 install -r requirements.txt
 
-# Установка comfy-cli
+# Установка comfy-cli (для node install)
 RUN pip3 install comfy-cli
 
 # Отключение трекинга без промпта
 RUN comfy --skip-prompt tracking disable
 
-# Установка ComfyUI-Manager как custom node (для cm-cli.py)
+# Установка ComfyUI-Manager как custom node (только clone, без pip install .)
 RUN mkdir -p custom_nodes && \
-    git clone https://github.com/Comfy-Org/ComfyUI-Manager.git custom_nodes/ComfyUI-Manager && \
-    cd custom_nodes/ComfyUI-Manager && \
-    pip3 install .
-
-# Команда для вывода пути (для отладки)
-RUN ls -l /app/ComfyUI/custom_nodes/ComfyUI-Manager/cm-cli.py || echo "File not found: cm-cli.py"
+    git clone https://github.com/ltdrdata/ComfyUI-Manager.git custom_nodes/ComfyUI-Manager
 
 # Установка custom nodes через comfy-cli с указанными версиями
 RUN comfy --here node install comfyui_ipadapter_plus@2.0.0
@@ -63,7 +58,7 @@ RUN mkdir -p user/default/ComfyUI-Manager && \
     echo "[default]" > user/default/ComfyUI-Manager/config.ini && \
     echo "network_mode = offline" >> user/default/ComfyUI-Manager/config.ini
 
-# Создание директорий для моделей
+# Создание директорий для моделей (из вашего Dockerfile)
 RUN mkdir -p models/checkpoints models/loras models/ipadapter models/clip_vision
 
 # Скачивание моделей (все curl из вашего Dockerfile)
