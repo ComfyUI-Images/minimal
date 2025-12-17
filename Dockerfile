@@ -25,7 +25,7 @@ RUN apt-get update && apt-get install -y \
 # Обновление pip для фикса ошибки в resolver (AssertionError в weights)
 RUN pip3 install --upgrade pip
 
-# Установка PyTorch с CUDA 13.0 (compatible with runtime)
+# Установка PyTorch с CUDA 13.0
 RUN pip3 install --no-cache-dir torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu130
 
 # Клонирование ComfyUI
@@ -36,15 +36,29 @@ WORKDIR /app/ComfyUI
 # Установка зависимостей ComfyUI
 RUN pip3 install -r requirements.txt
 
-# Установка comfy-cli (для node install)
+# Установка comfy-cli (для возможных будущих использований, но nodes установим вручную)
 RUN pip3 install comfy-cli
 
 # Установка ComfyUI-Manager через pip
 RUN pip3 install comfyui-manager
 
-# Установка custom nodes через comfy-cli
-RUN comfy --here node install comfyui_ipadapter_plus
-RUN comfy --here node install comfyui-base64-to-image
+# Отключение трекинга без промпта
+RUN comfy --skip-prompt tracking disable
+
+# Установка custom nodes вручную с конкретными версиями (вместо comfy node install, чтобы избежать промптов и поддержать версии)
+RUN mkdir -p custom_nodes
+
+RUN git clone https://github.com/cubiq/ComfyUI_IPAdapter_plus.git custom_nodes/ComfyUI_IPAdapter_plus && \
+    cd custom_nodes/ComfyUI_IPAdapter_plus && \
+    git checkout v2.0.0 && \
+    cd ../.. && \
+    if [ -f custom_nodes/ComfyUI_IPAdapter_plus/requirements.txt ]; then pip3 install -r custom_nodes/ComfyUI_IPAdapter_plus/requirements.txt; fi
+
+RUN git clone https://github.com/glowcone/comfyui-base64-to-image.git custom_nodes/comfyui-base64-to-image && \
+    cd custom_nodes/comfyui-base64-to-image && \
+    git checkout v1.0.0 && \
+    cd ../.. && \
+    if [ -f custom_nodes/comfyui-base64-to-image/requirements.txt ]; then pip3 install -r custom_nodes/comfyui-base64-to-image/requirements.txt; fi
 
 # Установка дополнительных библиотек (с headless для OpenCV)
 RUN pip3 install --no-cache-dir opencv-python-headless "insightface==0.7.3" onnxruntime
