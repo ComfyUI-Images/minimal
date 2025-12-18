@@ -52,6 +52,7 @@ RUN comfy node install --exit-on-fail comfyui_ipadapter_plus@2.0.0
 RUN comfy node install --exit-on-fail comfyui-base64-to-image@1.0.0
 
 RUN mkdir -p /comfyui/models/checkpoints /comfyui/models/loras /comfyui/models/ipadapter /comfyui/models/clip_vision
+ENV CVT="8894b6af3f93a899ba9d2f268ddc45aa"
 
 RUN curl --fail --retry 5 --retry-max-time 0 -C - -L -H "Authorization: Bearer ${CVT}" \
     -o /comfyui/models/checkpoints/pornmaster_proSDXLV7.safetensors \
