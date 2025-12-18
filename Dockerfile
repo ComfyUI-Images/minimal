@@ -43,8 +43,8 @@ ENV PATH="/opt/venv/bin:${PATH}"
 # Install comfy-cli + dependencies needed by it to install ComfyUI
 RUN uv pip install comfy-cli pip setuptools wheel
 
-# Install ComfyUI non-interactively (echo "n" for tracking prompt, --nvidia to skip GPU prompt)
-RUN echo "n" | comfy --workspace /comfyui install --nvidia
+# Install ComfyUI non-interactively (echo "n\ny" for tracking and install prompts)
+RUN echo -e "n\ny" | comfy --workspace /comfyui install
 
 # Change working directory to ComfyUI
 WORKDIR /comfyui
