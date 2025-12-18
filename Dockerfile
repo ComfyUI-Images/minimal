@@ -43,18 +43,25 @@ ENV PATH="/opt/venv/bin:${PATH}"
 # Install comfy-cli + dependencies needed by it to install ComfyUI
 RUN uv pip install comfy-cli pip setuptools wheel
 
-# Install ComfyUI non-interactively (echo "n\ny" for tracking and install prompts)
-RUN echo -e "n\ny" | comfy --workspace /comfyui install
+# Manual installation of ComfyUI (since comfy install is interactive)
+RUN git clone https://github.com/comfyanonymous/ComfyUI /comfyui && \
+    cd /comfyui && \
+    pip install -r requirements.txt
 
 # Change working directory to ComfyUI
 WORKDIR /comfyui
 
-# Установка ComfyUI-Manager через comfy node install
-RUN comfy node install ComfyUI-Manager
+# Manual installation of ComfyUI-Manager as custom node
+RUN mkdir -p custom_nodes && \
+    git clone https://github.com/ltdrdata/ComfyUI-Manager.git custom_nodes/ComfyUI-Manager && \
+    pip install -r custom_nodes/ComfyUI-Manager/requirements.txt
 
-# Установка custom nodes через comfy node install
-RUN comfy node install comfyui_ipadapter_plus
-RUN comfy node install comfyui-base64-to-image
+# Manual installation of custom nodes (since comfy node install requires non-interactive support)
+RUN git clone https://github.com/cubiq/ComfyUI_IPAdapter_plus.git custom_nodes/ComfyUI_IPAdapter_plus && \
+    pip install -r custom_nodes/ComfyUI_IPAdapter_plus/requirements.txt
+
+RUN git clone https://github.com/glowcone/comfyui-base64-to-image.git custom_nodes/comfyui-base64-to-image && \
+    if [ -f custom_nodes/comfyui-base64-to-image/requirements.txt ]; then pip install -r custom_nodes/comfyui-base64-to-image/requirements.txt; fi
 
 # Установка дополнительных библиотек (с headless для OpenCV)
 RUN uv pip install opencv-python-headless "insightface==0.7.3" onnxruntime
