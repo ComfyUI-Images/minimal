@@ -41,7 +41,7 @@ RUN wget -qO- https://astral.sh/uv/install.sh | sh \
 ENV PATH="/opt/venv/bin:${PATH}"
 
 # Install comfy-cli + dependencies needed by it to install ComfyUI
-RUN /opt/venv/bin/pip install comfy-cli pip setuptools wheel
+RUN pip install comfy-cli pip setuptools wheel
 
 # Manual installation of ComfyUI (since comfy install is interactive)
 RUN git clone https://github.com/comfyanonymous/ComfyUI /comfyui && \
@@ -64,7 +64,7 @@ RUN git clone https://github.com/glowcone/comfyui-base64-to-image.git custom_nod
     if [ -f custom_nodes/comfyui-base64-to-image/requirements.txt ]; then pip3 install -r custom_nodes/comfyui-base64-to-image/requirements.txt; fi
 
 # Установка дополнительных библиотек (с headless для OpenCV)
-RUN /opt/venv/bin/pip install opencv-python-headless "insightface==0.7.3" onnxruntime
+RUN pip install opencv-python-headless "insightface==0.7.3" onnxruntime
 
 # Настройка offline-режима для ComfyUI-Manager
 RUN mkdir -p user/default/ComfyUI-Manager && \
