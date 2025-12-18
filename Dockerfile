@@ -58,10 +58,10 @@ RUN mkdir -p custom_nodes && \
 
 # Manual installation of custom nodes (since comfy node install requires non-interactive support)
 RUN git clone https://github.com/cubiq/ComfyUI_IPAdapter_plus.git custom_nodes/ComfyUI_IPAdapter_plus && \
-    pip install -r custom_nodes/ComfyUI_IPAdapter_plus/requirements.txt
+    if [ -f custom_nodes/ComfyUI_IPAdapter_plus/requirements.txt ]; then pip3 install -r custom_nodes/ComfyUI_IPAdapter_plus/requirements.txt; fi
 
 RUN git clone https://github.com/glowcone/comfyui-base64-to-image.git custom_nodes/comfyui-base64-to-image && \
-    if [ -f custom_nodes/comfyui-base64-to-image/requirements.txt ]; then pip install -r custom_nodes/comfyui-base64-to-image/requirements.txt; fi
+    if [ -f custom_nodes/comfyui-base64-to-image/requirements.txt ]; then pip3 install -r custom_nodes/comfyui-base64-to-image/requirements.txt; fi
 
 # Установка дополнительных библиотек (с headless для OpenCV)
 RUN uv pip install opencv-python-headless "insightface==0.7.3" onnxruntime
