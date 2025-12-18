@@ -12,17 +12,8 @@ ENV PYTHONUNBUFFERED=1
 ENV CMAKE_BUILD_PARALLEL_LEVEL=8
 # Install Python, git and other necessary tools
 RUN apt-get update && apt-get install -y \
-    python3.12 \
-    python3.12-venv \
-    python3-pip \
-    git \
-    wget \
-    libgl1 \
-    libglib2.0-0 \
-    libsm6 \
-    libxext6 \
-    libxrender1 \
-    ffmpeg \
+    python3.12 python3.12-venv python3-pip \
+    git wget libgl1 libglib2.0-0 libsm6 libxext6 libxrender1 ffmpeg \
     && ln -sf /usr/bin/python3.12 /usr/bin/python \
     && ln -sf /usr/bin/pip3 /usr/bin/pip
 # Clean up to reduce image size
@@ -43,6 +34,21 @@ RUN mkdir -p custom_nodes && \
     pip install -r custom_nodes/ComfyUI-Manager/requirements.txt
 # Install comfy-cli for custom node installation via CLI
 RUN pip install comfy-cli
+
+#
+#    Base ComfyUI installation end
+#
+
+RUN apt-get update && apt-get install -y curl \
+    build-essential cmake libopenblas-dev liblapack-dev libjpeg-dev libpng-dev pkg-config && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN pip install opencv-python "insightface==0.7.3" onnxruntime
+
+# install nodes
+RUN comfy node install --exit-on-fail comfyui_ipadapter_plus@2.0.0
+RUN comfy node install --exit-on-fail comfyui-base64-to-image@1.0.0
+
 # Экспонирование порта
 EXPOSE 8188
 # Запуск сервера (с включением Manager; custom nodes can be installed via 'comfy node install NAME' in runtime)
