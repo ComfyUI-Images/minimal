@@ -35,6 +35,8 @@ RUN mkdir -p custom_nodes && \
 # Install comfy-cli for custom node installation via CLI
 RUN pip install comfy-cli
 
+RUN comfy --skip-prompt --no-enable-telemetry tracking disable
+
 #
 #    Base ComfyUI installation end
 #
