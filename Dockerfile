@@ -33,7 +33,7 @@ RUN mkdir -p custom_nodes && \
     git clone https://github.com/ltdrdata/ComfyUI-Manager.git custom_nodes/ComfyUI-Manager && \
     pip install -r custom_nodes/ComfyUI-Manager/requirements.txt
 # Install comfy-cli for custom node installation via CLI
-RUN pip install comfy-cli
+RUN pip install comfy-cli comfyui_manager
 
 RUN comfy --skip-prompt --no-enable-telemetry tracking disable
 
